@@ -87,7 +87,7 @@ fun MainScreen(onScanClick: () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-fun MainscreenPreview() {
+fun MainScreenPreview() {
     AndroidSmartDeviceTheme {
         MainScreen {}
     }

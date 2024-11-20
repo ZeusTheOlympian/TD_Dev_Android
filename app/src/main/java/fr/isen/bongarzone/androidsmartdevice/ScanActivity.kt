@@ -79,12 +79,16 @@ class ScanActivity : ComponentActivity() {
 
         if (!bluetoothAdapter.isEnabled) {
             requestEnableBluetooth()
+        } else {
+            // Ajouter ici la logique de démarrage du scan si nécessaire
+            Toast.makeText(this, "Bluetooth activé. Prêt à scanner.", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun requestEnableBluetooth() {
         val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
         bluetoothEnableLauncher.launch(enableBtIntent)
+        Toast.makeText(this, "Veuillez activer le Bluetooth pour continuer.", Toast.LENGTH_SHORT).show()
     }
 
     private val bluetoothEnableLauncher =

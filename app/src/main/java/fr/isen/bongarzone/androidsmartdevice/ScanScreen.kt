@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,11 +15,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fr.isen.bongarzone.androidsmartdevice.ui.theme.AndroidSmartDeviceTheme
+import android.bluetooth.le.ScanResult
+
 
 @Composable
 fun ScanScreen(
     isScanning: Boolean, // Paramètre pour l'état du scan
     onToggleScan: () -> Unit, // Callback pour démarrer/arrêter le scan
+    scanResults: List<ScanResult>, // Liste des résultats du scan BLE
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -52,23 +56,29 @@ fun ScanScreen(
 
         // Liste des appareils détectés (vide pour le moment)
         Text(text = "Appareils détectés :")
-        LazyColumn(modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 8.dp)) {
-            item {
-                Text(text = "Aucun appareil détecté", modifier = Modifier.padding(8.dp))
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 8.dp)
+        ) {
+            items(scanResults) { result ->
+                Column(modifier = Modifier.padding(8.dp)) {
+                    Text(text = "Nom : ${result.device?.name ?: "Inconnu"}")
+                    Text(text = "Adresse : ${result.device?.address ?: "Adresse inconnue"}")
+                }
             }
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun ScanScreenPreview() {
-    AndroidSmartDeviceTheme {
-        ScanScreen(
-            isScanning = false, // Valeur par défaut
-            onToggleScan = {}   // Lambda vide par défaut
-        )
+    @Preview(showBackground = true)
+    @Composable
+    fun ScanScreenPreview() {
+        AndroidSmartDeviceTheme {
+            ScanScreen(
+                isScanning = false, // Valeur par défaut
+                onToggleScan = {},   // Lambda vide par défaut
+                scanResults = emptyList() // Liste vide pour la prévisualisation
+            )
+        }
     }
-}
+

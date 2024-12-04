@@ -1,7 +1,5 @@
 package fr.isen.bongarzone.androidsmartdevice
 
-
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,12 +15,12 @@ import androidx.compose.ui.unit.dp
 import fr.isen.bongarzone.androidsmartdevice.ui.theme.AndroidSmartDeviceTheme
 import android.bluetooth.le.ScanResult
 
-
 @Composable
 fun ScanScreen(
-    isScanning: Boolean, // Paramètre pour l'état du scan
-    onToggleScan: () -> Unit, // Callback pour démarrer/arrêter le scan
-    scanResults: List<ScanResult>, // Liste des résultats du scan BLE
+    isScanning: Boolean,
+    onToggleScan: () -> Unit,
+    scanResults: List<ScanResult>,
+    onDeviceClick: (ScanResult) -> Unit, // Ajout du callback pour le clic
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -54,7 +52,7 @@ fun ScanScreen(
                 .padding(bottom = 16.dp)
         )
 
-        // Liste des appareils détectés (vide pour le moment)
+        // Liste des appareils détectés
         Text(text = "Appareils détectés :")
         LazyColumn(
             modifier = Modifier
@@ -62,7 +60,11 @@ fun ScanScreen(
                 .padding(top = 8.dp)
         ) {
             items(scanResults) { result ->
-                Column(modifier = Modifier.padding(8.dp)) {
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .clickable { onDeviceClick(result) } // Clic redirigeant
+                ) {
                     Text(text = "Nom : ${result.device?.name ?: "Inconnu"}")
                     Text(text = "Adresse : ${result.device?.address ?: "Adresse inconnue"}")
                 }
@@ -70,15 +72,16 @@ fun ScanScreen(
         }
     }
 }
-    @Preview(showBackground = true)
-    @Composable
-    fun ScanScreenPreview() {
-        AndroidSmartDeviceTheme {
-            ScanScreen(
-                isScanning = false, // Valeur par défaut
-                onToggleScan = {},   // Lambda vide par défaut
-                scanResults = emptyList() // Liste vide pour la prévisualisation
-            )
-        }
-    }
 
+@Preview(showBackground = true)
+@Composable
+fun ScanScreenPreview() {
+    AndroidSmartDeviceTheme {
+        ScanScreen(
+            isScanning = false,
+            onToggleScan = {},
+            scanResults = emptyList(),
+            onDeviceClick = {}
+        )
+    }
+}

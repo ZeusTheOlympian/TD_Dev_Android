@@ -17,14 +17,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
-import fr.isen.bongarzone.androidsmartdevice.ui.theme.AndroidSmartDeviceTheme
-/*E*/
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateListOf
-
+import fr.isen.bongarzone.androidsmartdevice.ui.theme.AndroidSmartDeviceTheme
 
 class ScanActivity : ComponentActivity() {
 
@@ -33,27 +29,32 @@ class ScanActivity : ComponentActivity() {
         android.Manifest.permission.BLUETOOTH_CONNECT,
         android.Manifest.permission.ACCESS_FINE_LOCATION
     )
-/*g*/
+
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var isScanning by mutableStateOf(false)
     private val scanResults = mutableStateListOf<ScanResult>()
     private val scanHandler = Handler(Looper.getMainLooper())
+    private val scanTimeout: Long = 10000L
 
-    private val scanTimeout: Long = 10000L // Timeout pour le scan (10 secondes)
-/*g*/
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-    /*g*/
+
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
-    /*g*/
+
         setContent {
             AndroidSmartDeviceTheme {
-                ScanScreenWithState(
+                ScanScreen(
                     isScanning = isScanning,
+                    onToggleScan = { toggleScan() },
                     scanResults = scanResults,
-                    onToggleScan = { toggleScan() }
+                    onDeviceClick = { result ->
+                        val intent = Intent(this, ConnectDeviceActivity::class.java)
+                        intent.putExtra("deviceName", result.device?.name ?: "Inconnu")
+                        intent.putExtra("deviceAddress", result.device?.address ?: "Adresse inconnue")
+                        startActivity(intent)
+                    }
                 )
             }
         }
@@ -88,8 +89,7 @@ class ScanActivity : ComponentActivity() {
 
     private fun initBLEScan() {
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth non disponible sur cet appareil", Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(this, "Bluetooth non disponible sur cet appareil", Toast.LENGTH_LONG).show()
             finish()
             return
         }
@@ -113,24 +113,24 @@ class ScanActivity : ComponentActivity() {
                 finish()
             }
         }
-/*g*/
+
     private fun toggleScan() {
-    if (!checkPermissions()) {
-        Toast.makeText(this, "Permissions manquantes pour scanner.", Toast.LENGTH_SHORT).show()
-        return
-    }
+        if (!checkPermissions()) {
+            Toast.makeText(this, "Permissions manquantes pour scanner.", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-    if (bluetoothAdapter?.isEnabled == false) {
-        Toast.makeText(this, "Veuillez activer le Bluetooth pour scanner.", Toast.LENGTH_SHORT).show()
-        return
-    }
+        if (bluetoothAdapter?.isEnabled == false) {
+            Toast.makeText(this, "Veuillez activer le Bluetooth pour scanner.", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-    if (isScanning) {
-        stopScan()
-    } else {
-        startScan()
+        if (isScanning) {
+            stopScan()
+        } else {
+            startScan()
+        }
     }
-}
 
     private fun startScan() {
         if (checkSelfPermission(android.Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED) {
@@ -138,7 +138,6 @@ class ScanActivity : ComponentActivity() {
             isScanning = true
             Toast.makeText(this, "Scan démarré", Toast.LENGTH_SHORT).show()
 
-            // Arrêter le scan après le timeout
             scanHandler.postDelayed({
                 stopScan()
             }, scanTimeout)
@@ -164,63 +163,5 @@ class ScanActivity : ComponentActivity() {
                 scanResults.add(result)
             }
         }
-        override fun onBatchScanResults(results: MutableList<ScanResult>) {
-            super.onBatchScanResults(results)
-            if (results.isEmpty()) {
-                Toast.makeText(this@ScanActivity, "Aucun appareil trouvé dans le scan en lot.", Toast.LENGTH_SHORT).show()
-            }
-            for (result in results) {
-                if (!scanResults.any { it.device.address == result.device.address }) {
-                    scanResults.add(result)
-                }
-            }
-        }
-
-        override fun onScanFailed(errorCode: Int) {
-            super.onScanFailed(errorCode)
-            Toast.makeText(this@ScanActivity, "Erreur de scan : $errorCode", Toast.LENGTH_SHORT).show()
-        }
     }
-    private fun getDeviceName(result: ScanResult): String {
-        return if (checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
-            result.device?.name ?: "Inconnu"
-        } else {
-            "Permission requise"
-        }
-    }
-
-    private fun getDeviceAddress(result: ScanResult): String {
-        return if (checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
-            result.device?.address ?: "Adresse inconnue"
-        } else {
-            "Permission requise"
-        }
-    }
-    data class DeviceInfo(
-        val name: String,
-        val address: String
-    )
-
-    val processedResults = scanResults.map { result ->
-        DeviceInfo(
-            name = getDeviceName(result),
-            address = getDeviceAddress(result)
-        )
-    }
-
-
-}
-/*g*/
-
-@Composable
-fun ScanScreenWithState(
-    isScanning: Boolean,
-    scanResults: List<ScanResult>,
-    onToggleScan: () -> Unit
-) {
-    ScanScreen(
-        isScanning = isScanning,
-        onToggleScan = onToggleScan,
-        scanResults = scanResults
-    )
 }
